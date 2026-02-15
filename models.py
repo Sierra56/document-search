@@ -1,5 +1,4 @@
 import sqlite3
-import json
 from datetime import datetime
 from elasticsearch import Elasticsearch
 
@@ -74,3 +73,15 @@ def create_index():
                 }
             }
         })
+        print(f"Индекс '{INDEX_NAME}' создан")
+    else:
+        print(f"Индекс '{INDEX_NAME}' уже существует — пропускаем создание")
+
+# Опционально: добавим ping для дебага
+try:
+    if es.ping():
+        print("Elasticsearch доступен (ping OK)")
+    else:
+        print("Elasticsearch не отвечает на ping")
+except Exception as e:
+    print(f"Ошибка подключения к ES: {e}")
