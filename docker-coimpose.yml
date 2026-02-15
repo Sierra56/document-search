@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+
+  redis-commander:
+    image: rediscommander/redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+
+  extractor:
+    build: ./extractor
+    volumes:
+      - ./docs:/docs
+    environment:
+      - ES_HOST=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+  web:
+    build: ./web
+    ports:
+      - "8080:8080"
+    environment:
+      - ES_HOST=http://elasticsearch:9200
+      - REDIS_HOST=redis
+      - ADMIN_PASSWORD=admin123
+      - ENABLE_AUTH=false
+    depends_on:
+      - elasticsearch
+      - redis
+
+volumes:
+  esdata:
+  redisdata:

@@ -1,0 +1,6 @@
+Flask
+elasticsearch
+redis
+flask-caching
+bcrypt
+reportlab
