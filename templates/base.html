@@ -1,15 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <title>Document Search</title>
-  <link rel="stylesheet" href="/static/adminlte/css/adminlte.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Поиск документов{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='adminlte/css/bootstrap.min.css') }}">
+    <!-- AdminLTE CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='adminlte/css/adminlte.min.css') }}">
 </head>
-<body class="hold-transition layout-top-nav">
+<body class="hold-transition sidebar-mini">
 <div class="wrapper">
-  {% block content %}{% endblock %}
-  <footer class="main-footer text-center">
-    <span class="text-muted">by 072 (YYE)</span>
-  </footer>
+
+    {% block navbar %}
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+        <!-- ... твой navbar ... -->
+    </nav>
+    {% endblock %}
+
+    <div class="content-wrapper">
+        {% block content %}{% endblock %}
+    </div>
+
 </div>
+
+<!-- jQuery -->
+<script src="{{ url_for('static', filename='adminlte/js/jquery.min.js') }}"></script>
+<!-- Bootstrap JS -->
+<script src="{{ url_for('static', filename='adminlte/js/bootstrap.bundle.min.js') }}"></script>
+<!-- AdminLTE JS -->
+<script src="{{ url_for('static', filename='adminlte/js/adminlte.min.js') }}"></script>
+
 </body>
 </html>

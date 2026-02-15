@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Вход в админ</h2>
+    <form method="POST">
+        <input type="password" name="password" class="form-control" placeholder="Пароль">
+        <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}<div class="alert alert-danger">{{ messages[0] }}</div>{% endif %}
+    {% endwith %}
+</div>
+{% endblock %}

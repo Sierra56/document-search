@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+    <h1>Поиск документов</h1>
+    <p>Поддерживаемые форматы: PDF, DOCX, RTF</p>
+    <form method="GET">
+        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Введите запрос...">
+        <button type="submit" class="btn btn-primary">Поиск</button>
+    </form>
+    
+    {% if query %}
+    <h3>Результаты для "{{ query }}"</h3>
+    <ul>
+        {% for hit in highlights %}
+        <li>
+            <strong>{{ hit.filename }}</strong> ({{ hit.added_date }})
+            <p>{% for fragment in hit.highlight.content %}{{ fragment }}{% endfor %}</p>
+        </li>
+        {% endfor %}
+    </ul>
+    
+    <h4>История (последние 10)</h4>
+    <ul>{% for q in history %}<li>{{ q }}</li>{% endfor %}</ul>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,52 +1,49 @@
-version: "3.8"
+version: '3.8'
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-  redis:
-    image: redis:7
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - redisdata:/data
-
-  redis-commander:
-    image: rediscommander/redis-commander
-    environment:
-      - REDIS_HOSTS=local:redis:6379
+  app:
+    build: .
+    command: python app.py
     ports:
-      - "8081:8081"
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-secret}
+      - ES_HOST=elasticsearch:9200
+    volumes:
+      - ./docs:/app/docs
+      - ./db.sqlite:/app/db.sqlite
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
 
   extractor:
-    build: ./extractor
+    build: .
+    command: python extractor.py
+    environment:
+      - ES_HOST=elasticsearch:9200
     volumes:
-      - ./docs:/docs
-    environment:
-      - ES_HOST=http://elasticsearch:9200
+      - ./docs:/app/docs
+      - ./db.sqlite:/app/db.sqlite
     depends_on:
-      - elasticsearch
-
-  web:
-    build: ./web
-    ports:
-      - "8080:8080"
-    environment:
-      - ES_HOST=http://elasticsearch:9200
-      - REDIS_HOST=redis
-      - ADMIN_PASSWORD=admin123
-      - ENABLE_AUTH=false
-    depends_on:
-      - elasticsearch
-      - redis
+      elasticsearch:
+        condition: service_healthy
 
 volumes:
   esdata:
-  redisdata:
