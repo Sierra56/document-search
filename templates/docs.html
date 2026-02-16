@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Документы{% endblock %}
+{% block page_title %}Документы{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">Проиндексированные документы</div>
+    <div class="card-body" id="docs-table-container">
+        <!-- таблица подгружается через JS -->
+    </div>
+</div>
+
+<script>
+    function loadDocsTable() {
+        fetch('/api/docs')
+            .then(r => r.json())
+            .then(data => {
+                let html = '<table class="table"><thead><tr><th>Файл</th><th>Дата добавления</th><th>Статус</th></tr></thead><tbody>';
+                
+                if (data.length === 0) {
+                    html += '<tr><td colspan="3" class="empty">Пока нет документов</td></tr>';
+                } else {
+                    data.forEach(doc => {
+                        let badge = '';
+                        if (doc.status === 'indexed') badge = 'badge-success';
+                        else if (doc.status === 'indexing') badge = 'badge-warning';
+                        else badge = 'badge-danger';
+
+                        html += `
+                            <tr>
+                                <td><strong>${doc.filename}</strong></td>
+                                <td>${doc.added_date}</td>
+                                <td><span class="badge ${badge}">${doc.status}</span></td>
+                            </tr>`;
+                    });
+                }
+                
+                html += '</tbody></table>';
+                document.getElementById('docs-table-container').innerHTML = html;
+            })
+            .catch(err => console.error('Ошибка:', err));
+    }
+
+    loadDocsTable();
+    setInterval(loadDocsTable, 3000);
+</script>
+
+<style>
+    .empty { text-align: center; padding: 2.5rem; color: #6b7280; font-style: italic; }
+</style>
+{% endblock %}

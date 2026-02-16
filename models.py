@@ -9,6 +9,8 @@ es = Elasticsearch([ES_HOST])
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    
+    # Основная таблица документов
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS documents (
             id TEXT PRIMARY KEY,
@@ -17,6 +19,17 @@ def init_db():
             status TEXT DEFAULT 'indexing'
         )
     ''')
+    
+    # Новая таблица для истории поиска
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS search_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            query TEXT NOT NULL,
+            ip_address TEXT,
+            timestamp TEXT
+        )
+    ''')
+    
     conn.commit()
     conn.close()
 
@@ -75,13 +88,32 @@ def create_index():
         })
         print(f"Индекс '{INDEX_NAME}' создан")
     else:
-        print(f"Индекс '{INDEX_NAME}' уже существует — пропускаем создание")
+        print(f"Индекс '{INDEX_NAME}' уже существует")
 
-# Опционально: добавим ping для дебага
-try:
-    if es.ping():
-        print("Elasticsearch доступен (ping OK)")
-    else:
-        print("Elasticsearch не отвечает на ping")
-except Exception as e:
-    print(f"Ошибка подключения к ES: {e}")
+def save_search(query, ip_address):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cursor.execute(
+        'INSERT INTO search_history (query, ip_address, timestamp) VALUES (?, ?, ?)',
+        (query, ip_address, now)
+    )
+    conn.commit()
+    conn.close()
+
+def get_search_history(limit=10):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT query, ip_address, timestamp 
+        FROM search_history 
+        ORDER BY timestamp DESC 
+        LIMIT ?
+    ''', (limit,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [{'query': row[0], 'ip': row[1], 'time': row[2]} for row in rows]
+
+# Инициализация при импорте
+init_db()
+create_index()

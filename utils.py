@@ -3,15 +3,18 @@ import pdfplumber
 from docx import Document
 from striprtf.striprtf import rtf_to_text
 from datetime import datetime
+import shutil  # ← добавлен для перемещения файлов
 
 from config import DOCS_PATH, INDEX_NAME
 from models import update_doc_status, es
 
+INDEXED_PATH = os.path.join(DOCS_PATH, 'indexed')
+
+# Создаём папку indexed при первом запуске, если её нет
+if not os.path.exists(INDEXED_PATH):
+    os.makedirs(INDEXED_PATH)
+
 def extract_text(filename):
-    """
-    Извлекает текст из поддерживаемых файлов.
-    Поддерживаются только: .pdf, .docx, .rtf
-    """
     filepath = os.path.join(DOCS_PATH, filename)
     name, ext = os.path.splitext(filename)
     ext = ext.lower()
@@ -59,7 +62,13 @@ def index_doc(filename):
         }
         es.index(index=INDEX_NAME, id=filename, body=doc_body)
         update_doc_status(filename, 'indexed')
-        print(f"Успешно проиндексирован: {filename}")
+
+        # Перемещаем файл в indexed после успешной индексации
+        src = os.path.join(DOCS_PATH, filename)
+        dst = os.path.join(INDEXED_PATH, filename)
+        shutil.move(src, dst)
+        print(f"Успешно проиндексирован и перемещён: {filename} → {dst}")
+
         return True
     except Exception as e:
         print(f"Ошибка индексации {filename}: {type(e).__name__} - {str(e)}")

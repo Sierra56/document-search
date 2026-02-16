@@ -1,31 +1,41 @@
+version: '3.8'
+
 services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: elasticsearch
     environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node                  # одиночный узел — для разработки/теста
+      - xpack.security.enabled=false                # отключаем авторизацию (для простоты)
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"            # ограничиваем потребление памяти
+      - TZ=Asia/Yekaterinburg                            # правильный часовой пояс (можно поменять)
     ports:
       - "9200:9200"
     volumes:
-      - esdata:/usr/share/elasticsearch/data
+      # Прямая привязка папки на хосте — все данные ES сохраняются здесь
+      # После любого перезапуска контейнера индексы остаются нетронутыми
+      - ./es-data:/usr/share/elasticsearch/data
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
+    restart: unless-stopped                         # контейнер перезапустится сам при сбое
 
   app:
     build: .
+    container_name: app
     command: python app.py
     ports:
       - "5000:5000"
     environment:
       - FLASK_ENV=production
-      - ADMIN_PASSWORD=123456
-      - ES_HOST=elasticsearch:9200
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-secret}
+      - ES_HOST=http://elasticsearch:9200
+      - TZ=Asia/Yekaterinburg
     volumes:
       - ./docs:/app/docs
+      - ./docs/indexed:/app/docs/indexed
       - ./db.sqlite:/app/db.sqlite
     depends_on:
       elasticsearch:
@@ -33,15 +43,15 @@ services:
 
   extractor:
     build: .
+    container_name: extractor
     command: python extractor.py
     environment:
-      - ES_HOST=elasticsearch:9200
+      - ES_HOST=http://elasticsearch:9200
+      - TZ=Asia/Yekaterinburg
     volumes:
       - ./docs:/app/docs
+      - ./docs/indexed:/app/docs/indexed
       - ./db.sqlite:/app/db.sqlite
     depends_on:
       elasticsearch:
         condition: service_healthy
-
-volumes:
-  esdata:

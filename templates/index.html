@@ -1,26 +1,102 @@
 {% extends "base.html" %}
+
+{% block title %}Поиск{% endblock %}
+{% block page_title %}Поиск{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <h1>Поиск документов</h1>
-    <p>Поддерживаемые форматы: PDF, DOCX, RTF</p>
-    <form method="GET">
-        <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Введите запрос...">
-        <button type="submit" class="btn btn-primary">Поиск</button>
-    </form>
-    
-    {% if query %}
-    <h3>Результаты для "{{ query }}"</h3>
-    <ul>
-        {% for hit in highlights %}
-        <li>
-            <strong>{{ hit.filename }}</strong> ({{ hit.added_date }})
-            <p>{% for fragment in hit.highlight.content %}{{ fragment }}{% endfor %}</p>
-        </li>
-        {% endfor %}
-    </ul>
-    
-    <h4>История (последние 10)</h4>
-    <ul>{% for q in history %}<li>{{ q }}</li>{% endfor %}</ul>
-    {% endif %}
+<div class="card">
+    <div class="card-header">Поиск по содержимому документов</div>
+    <div class="card-body">
+        <form method="GET" class="search-form">
+            <input type="text" name="q" value="{{ query }}" placeholder="Введите запрос..." autofocus>
+            <button type="submit">Искать</button>
+        </form>
+
+        <p style="color:#6b7280; margin:0.5rem 0 1.5rem;">
+            PDF, DOCX, RTF
+        </p>
+
+        {% if query %}
+        <h3 style="margin:1.5rem 0 1rem;">Результаты для «{{ query }}»</h3>
+
+        {% if highlights %}
+        <div class="results">
+            {% for item in highlights %}
+            <div class="result-item">
+                <h5>{{ item.filename }}</h5>
+                <div class="meta">{{ item.added_date }}</div>
+                
+                <!-- Короткий вид: 1–2 фрагмента -->
+                <div class="short-text">
+                    {{ item.highlighted_short | safe }}
+                </div>
+                
+                <!-- Кнопка раскрытия -->
+                <button class="show-more" onclick="toggleFullText(this)">Показать больше</button>
+                
+                <!-- Полный вид: все подсвеченные фрагменты -->
+                <div class="full-text" style="display:none;">
+                    {{ item.highlighted_full | safe }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="padding:1.5rem; background:#eff6ff; border-radius:8px; color:#1e40af; text-align:center;">
+            Ничего не найдено. Попробуйте изменить запрос.
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
 </div>
+
+<style>
+    .result-item {
+        padding: 1.2rem 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .result-item:last-child {
+        border-bottom: none;
+    }
+    .short-text {
+        margin: 0.6rem 0;
+        color: #374151;
+        line-height: 1.6;
+    }
+    .show-more {
+        margin-top: 0.5rem;
+        padding: 0.4rem 1rem;
+        background: #e5e7eb;
+        border: none;
+        border-radius: 6px;
+        color: #374151;
+        cursor: pointer;
+        font-size: 0.9rem;
+    }
+    .show-more:hover {
+        background: #d1d5db;
+    }
+    .full-text {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+</style>
+
+<script>
+    function toggleFullText(button) {
+        const fullText = button.nextElementSibling;
+        if (fullText.style.display === "none" || fullText.style.display === "") {
+            fullText.style.display = "block";
+            button.textContent = "Скрыть";
+        } else {
+            fullText.style.display = "none";
+            button.textContent = "Показать больше";
+        }
+    }
+</script>
 {% endblock %}

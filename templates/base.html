@@ -2,35 +2,55 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Поиск документов{% endblock %}</title>
-    
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='adminlte/css/bootstrap.min.css') }}">
-    <!-- AdminLTE CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='adminlte/css/adminlte.min.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DocSearch{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body class="hold-transition sidebar-mini">
-<div class="wrapper">
+<body>
 
-    {% block navbar %}
-    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-        <!-- ... твой navbar ... -->
-    </nav>
-    {% endblock %}
-
-    <div class="content-wrapper">
-        {% block content %}{% endblock %}
+    <div class="sidebar">
+        <div class="sidebar-header">DocSearch</div>
+        
+        <ul class="nav-list">
+            <li class="nav-item">
+                <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">
+                    <i class="fas fa-search"></i> Поиск
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('docs') }}" class="{% if request.endpoint == 'docs' %}active{% endif %}">
+                    <i class="fas fa-folder"></i> Документы
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ url_for('history') }}" class="{% if request.endpoint == 'history' %}active{% endif %}">
+                    <i class="fas fa-history"></i> История
+                </a>
+            </li>
+            
+            <li class="nav-header">Администрирование</li>
+            <li class="nav-item">
+                <a href="{{ url_for('admin') }}" class="{% if request.endpoint.startswith('admin') %}active{% endif %}">
+                    <i class="fas fa-cogs"></i> Админ-панель
+                </a>
+            </li>
+        </ul>
     </div>
 
-</div>
+    <div class="main-content">
+        <header>
+            <h1>{% block page_title %}{% endblock %}</h1>
+        </header>
 
-<!-- jQuery -->
-<script src="{{ url_for('static', filename='adminlte/js/jquery.min.js') }}"></script>
-<!-- Bootstrap JS -->
-<script src="{{ url_for('static', filename='adminlte/js/bootstrap.bundle.min.js') }}"></script>
-<!-- AdminLTE JS -->
-<script src="{{ url_for('static', filename='adminlte/js/adminlte.min.js') }}"></script>
+        {% block content %}{% endblock %}
+
+        <footer>
+            DocSearch © {{ 'now'|strftime('%Y') }}  
+            <span style="margin-left: 1.5rem; color: #9ca3af;">
+                made by 072 (YYE)
+            </span>
+        </footer>
+    </div>
 
 </body>
 </html>

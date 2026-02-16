@@ -1,13 +1,40 @@
 {% extends "base.html" %}
+
+{% block title %}Вход{% endblock %}
+{% block page_title %}Вход в админ-панель{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>Вход в админ</h2>
-    <form method="POST">
-        <input type="password" name="password" class="form-control" placeholder="Пароль">
-        <button type="submit" class="btn btn-primary">Войти</button>
-    </form>
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}<div class="alert alert-danger">{{ messages[0] }}</div>{% endif %}
-    {% endwith %}
+<div class="card" style="max-width: 420px; margin: 4rem auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+    <div class="card-header" style="font-size: 1.3rem; text-align: center;">
+        Вход в админ-панель
+    </div>
+    
+    <div class="card-body" style="padding: 2rem;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }}" style="margin-bottom: 1.5rem; padding: 1rem; border-radius: 8px;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div style="margin-bottom: 1.5rem;">
+                <label for="password" style="display: block; margin-bottom: 0.6rem; font-weight: 500; color: #374151;">
+                    Пароль
+                </label>
+                <input type="password" id="password" name="password" 
+                       style="width: 100%; padding: 0.95rem 1.2rem; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1.05rem; outline: none; transition: border-color 0.2s;"
+                       placeholder="Введите пароль" autofocus required>
+            </div>
+
+            <button type="submit" 
+                    style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 12px rgba(59,130,246,0.25);">
+                Войти
+            </button>
+        </form>
+    </div>
 </div>
 {% endblock %}

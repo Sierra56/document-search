@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}История{% endblock %}
+{% block page_title %}История поиска{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">История поисковых запросов</div>
+    <div class="card-body">
+        {% if history %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Запрос</th>
+                    <th>IP-адрес</th>
+                    <th>Время</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in history %}
+                <tr>
+                    <td><strong>{{ record.query }}</strong></td>
+                    <td class="ip">{{ record.ip }}</td>
+                    <td class="time">{{ record.time }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-message">
+            История пока пуста
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .ip {
+        font-family: monospace;
+        color: #475569;
+    }
+    .time {
+        color: #64748b;
+        white-space: nowrap;
+    }
+    .empty-message {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6b7280;
+        font-style: italic;
+        background: #f8fafc;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
