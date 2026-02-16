@@ -1,4 +1,6 @@
 docs/*
+redis-data/*
+es-data/*
 db.sqlite
 .env
 __pycache__/

@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_caching import Cache
 from datetime import datetime
 import json
 import os
@@ -9,12 +10,29 @@ from models import list_docs, delete_doc, init_db, create_index, save_search, ge
 from utils import index_doc
 
 app = Flask(__name__)
-app.secret_key = 'dev-secret-key-change-in-production'  # В проде — обязательно из env или secrets
+app.secret_key = 'dev-secret-key-change-in-production'
+
+# Настройка кэша с обработкой ошибок подключения
+cache_config = {
+    'CACHE_TYPE': 'redis',
+    'CACHE_REDIS_URL': os.getenv('REDIS_URL', 'redis://redis:6379/0'),
+    'CACHE_DEFAULT_TIMEOUT': 600
+}
+
+cache = Cache(app, config=cache_config)
+
+# Если Redis недоступен — отключаем кэш, чтобы приложение не падало
+try:
+    cache.cache._client.ping()  # тест подключения
+    print("Redis подключён успешно")
+except Exception as e:
+    print(f"Redis недоступен: {e}. Кэширование отключено.")
+    cache.config['CACHE_TYPE'] = 'null'  # отключаем кэш полностью
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'admin_login'
-login_manager.login_message = None  # убираем стандартное сообщение "Please log in..."
+login_manager.login_message = None
 
 class AdminUser(UserMixin):
     def get_id(self):
@@ -30,6 +48,7 @@ init_db()
 create_index()
 
 @app.route('/')
+@cache.cached(timeout=600, query_string=True)
 def index():
     query = request.args.get('q', '')
     highlights = []
@@ -74,18 +93,18 @@ def index():
                 item['highlighted_full'] = highlighted_full
                 highlights.append(item)
             
-            # Сохраняем в историю поиска
             ip = request.remote_addr
             save_search(query, ip)
             
-            # Обновляем локальную историю в сессии
             history = [q for q in history if q != query][:9] + [query]
             session['search_history'] = history
         
         except Exception as e:
             flash(f'Ошибка поиска: {str(e)}', 'error')
     
-    return render_template('index.html', query=query, highlights=highlights, history=history)
+    current_year = datetime.now().year
+    
+    return render_template('index.html', query=query, highlights=highlights, history=history, current_year=current_year)
 
 @app.route('/docs')
 def docs():
@@ -115,7 +134,8 @@ def admin():
 @login_required
 def admin_delete(filename):
     delete_doc(filename)
-    flash(f'Документ удалён: {filename}', 'success')
+    flash(f'Удалён: {filename}', 'success')
+    cache.clear()
     return redirect(url_for('admin'))
 
 @app.route('/admin/delete_all')
@@ -126,13 +146,22 @@ def admin_delete_all():
     for doc in docs_list:
         delete_doc(doc['filename'])
     flash(f'Удалено {count} документов', 'success')
+    cache.clear()
+    return redirect(url_for('admin'))
+
+@app.route('/admin/clear_cache')
+@login_required
+def admin_clear_cache():
+    cache.clear()
+    flash('Кэш полностью очищен', 'success')
     return redirect(url_for('admin'))
 
 @app.route('/admin/reindex/<filename>')
 @login_required
 def admin_reindex(filename):
     index_doc(filename)
-    flash(f'Переиндексация запущена для: {filename}', 'info')
+    flash(f'Переиндексация запущена: {filename}', 'info')
+    cache.clear()
     return redirect(url_for('admin'))
 
 @app.route('/admin/reindex_all')
@@ -140,11 +169,12 @@ def admin_reindex(filename):
 def admin_reindex_all():
     from config import DOCS_PATH
     count = 0
-    for filename in os.listdir(DOCS_PATH):
-        if filename.lower().endswith(('.pdf', '.docx', '.rtf')):
-            index_doc(filename)
+    for f in os.listdir(DOCS_PATH):
+        if f.lower().endswith(('.pdf', '.docx', '.rtf')):
+            index_doc(f)
             count += 1
     flash(f'Переиндексация запущена для {count} файлов', 'info')
+    cache.clear()
     return redirect(url_for('admin'))
 
 @app.route('/api/docs')

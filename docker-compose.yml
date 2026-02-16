@@ -5,22 +5,38 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
     container_name: elasticsearch
     environment:
-      - discovery.type=single-node                  # одиночный узел — для разработки/теста
-      - xpack.security.enabled=false                # отключаем авторизацию (для простоты)
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"            # ограничиваем потребление памяти
-      - TZ=Asia/Yekaterinburg                            # правильный часовой пояс (можно поменять)
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - TZ=Asia/Yekaterinburg
     ports:
       - "9200:9200"
     volumes:
-      # Прямая привязка папки на хосте — все данные ES сохраняются здесь
-      # После любого перезапуска контейнера индексы остаются нетронутыми
       - ./es-data:/usr/share/elasticsearch/data
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-    restart: unless-stopped                         # контейнер перезапустится сам при сбое
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-secret} --appendonly yes
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-secret}
+    volumes:
+      - ./redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-secret}", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
 
   app:
     build: .
@@ -32,6 +48,7 @@ services:
       - FLASK_ENV=production
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-secret}
       - ES_HOST=http://elasticsearch:9200
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-secret}@redis:6379/0
       - TZ=Asia/Yekaterinburg
     volumes:
       - ./docs:/app/docs
@@ -40,6 +57,9 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+      redis:
+        condition: service_healthy               # ← самый важный фикс: Flask ждёт Redis
+    restart: unless-stopped
 
   extractor:
     build: .
@@ -55,3 +75,7 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
+      redis:
+        condition: service_healthy               # ← extractor тоже ждёт Redis
+
+# Нет volumes-блока — используем bind mount

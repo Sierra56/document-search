@@ -11,6 +11,7 @@
         <div style="float: right; display: flex; gap: 1rem;">
             <a href="{{ url_for('admin_reindex_all') }}" class="btn-reindex-all">Переиндексировать все</a>
             <button onclick="deleteAllDocuments()" class="btn-delete-all">Удалить все</button>
+            <a href="{{ url_for('admin_clear_cache') }}" class="btn-clear-cache">Очистить кэш</a>
         </div>
     </div>
     
@@ -54,13 +55,10 @@
             .catch(err => console.error('Ошибка загрузки таблицы:', err));
     }
 
-    // Удаление всех документов
     function deleteAllDocuments() {
         if (!confirm("Вы уверены, что хотите удалить ВСЕ документы?\n\nЭто действие нельзя отменить.")) {
             return;
         }
-        
-        // Можно сделать через fetch на новый роут, но для простоты — редирект на новый endpoint
         window.location.href = "/admin/delete_all";
     }
 
@@ -69,29 +67,14 @@
 </script>
 
 <style>
-    .btn-reindex-all {
-        padding: 0.5rem 1rem;
-        background: #f59e0b;
-        color: white;
-        border-radius: 6px;
-        text-decoration: none;
-        font-size: 0.9rem;
-    }
-    .btn-reindex-all:hover { background: #d97706; }
-    
-    .btn-delete-all {
-        padding: 0.5rem 1rem;
-        background: #ef4444;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        cursor: pointer;
-    }
-    .btn-delete-all:hover { background: #dc2626; }
-    
-    .action-delete { color: #ef4444; margin-right: 1rem; text-decoration: none; }
-    .action-reindex { color: #3b82f6; text-decoration: none; }
-    .empty { text-align: center; padding: 2.5rem; color: #6b7280; font-style: italic; }
+    .btn-reindex-all { padding:0.5rem 1rem; background:#f59e0b; color:white; border-radius:6px; text-decoration:none; font-size:0.9rem; }
+    .btn-reindex-all:hover { background:#d97706; }
+    .btn-delete-all { padding:0.5rem 1rem; background:#ef4444; color:white; border:none; border-radius:6px; font-size:0.9rem; cursor:pointer; }
+    .btn-delete-all:hover { background:#dc2626; }
+    .btn-clear-cache { padding:0.5rem 1rem; background:#6b7280; color:white; border:none; border-radius:6px; font-size:0.9rem; cursor:pointer; text-decoration:none; }
+    .btn-clear-cache:hover { background:#4b5563; }
+    .action-delete { color:#ef4444; margin-right:1rem; text-decoration:none; }
+    .action-reindex { color:#3b82f6; text-decoration:none; }
+    .empty { text-align:center; padding:2.5rem; color:#6b7280; font-style:italic; }
 </style>
 {% endblock %}
